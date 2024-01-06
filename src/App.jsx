@@ -9,7 +9,7 @@ function App() {
     const sortedArray = entries.sort((a, b) => a.date - b.date);
     console.log(entries)
     return (
-        <div>
+        <div className='chart'>
             <div>
                 <div>value N: {valueN}</div>
                 <input

@@ -56,14 +56,14 @@ const StockChart = ({ data, N, K }) => {
                 .text("↑ Daily close ($)"));
 
         svg.append("g")
-            .attr("fill", "none")
+            .attr("fill", "#ff000012")
             .attr("stroke-width", 1.5)
             .attr("stroke-linejoin", "round")
             .attr("stroke-linecap", "round")
             .selectAll()
             .data([values, ...bollinger(values, N, [-K, 0, +K])])
             .join("path")
-            .attr("stroke", (d, i) => ["#aaa", "green", "blue", "red"][i])
+            .attr("stroke", (d, i) => ["white", "green", "blue", "red"][i])
             .attr("d", line);
 
         // Hinzufügen der roten Linie bei einem Zuckerpegel von 180
