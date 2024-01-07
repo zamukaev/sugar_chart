@@ -6,6 +6,7 @@ import { useState } from 'react';
 function App() {
     const [valueN, setValueN] = useState(2)
     const [valueK, setValueK] = useState(0)
+
     const sortedArray = entries.sort((a, b) => a.date - b.date);
     console.log(entries)
     return (

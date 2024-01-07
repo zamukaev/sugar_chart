@@ -1,12 +1,10 @@
 /* eslint-disable react/prop-types */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3';
 
 const StockChart = ({ data, N, K }) => {
     const chartRef = useRef(null);
-
-
-
+    const [timePeriod, setTimePeriod] = useState("year");
     const drawChart = useCallback(() => {
         const width = 1228;
         const height = 800;
@@ -55,16 +53,42 @@ const StockChart = ({ data, N, K }) => {
                 .attr("font-weight", "bold")
                 .text("↑ Daily close ($)"));
 
-        svg.append("g")
-            .attr("fill", "#ff000012")
-            .attr("stroke-width", 1.5)
+        // svg.append("g")
+
+        //     .attr("stroke-linejoin", "round")
+        //     .attr("stroke-linecap", "round")
+        //     .selectAll()
+        //     .data([values, ...bollinger(values, N, [-K, 0, +K])])
+        //     .join("path")
+        //     .attr("stroke", (d, i) => ["white", "green", "blue", "red"][i])
+        //     .attr("stroke-width", (d, i) => [1.5, 1.5, 1.5, 1.5][i])
+        //     .attr("fill", (d, i) => ["none", "none", "none", "none"][i])
+        //     .attr("d", line);
+        var group = svg.append("g")
             .attr("stroke-linejoin", "round")
-            .attr("stroke-linecap", "round")
-            .selectAll()
+            .attr("stroke-linecap", "round");
+
+        // Define the area generator (as before)
+        var area = d3.area()
+            .x(function (d, i) { return x(d.x); }) // Adjust for your data
+            .y0(function (d) { return y(d[0]); }) // Upper boundary (green line)
+            .y1(function (d) { return y(d[1]); }); // Lower boundary (blue line)
+
+        // Append the area path to the group
+        group.append("path")
+            .datum(values.map((d, i) => [d, bollinger(values, N, [-K, 0, +K])[1][i]])) // Combining values for green and blue lines
+            .attr("fill", "rgba(187, 187, 187, 0.07)") // Transparent gray color
+            .attr("d", area);
+
+        // Then append the line paths (as in your existing code)
+        group.selectAll()
             .data([values, ...bollinger(values, N, [-K, 0, +K])])
             .join("path")
             .attr("stroke", (d, i) => ["white", "green", "blue", "red"][i])
+            .attr("stroke-width", (d, i) => [1.5, 1.5, 1.5, 1.5][i])
+            .attr("fill", (d, i) => ["none", "none", "none", "#bbbbbb12"][i])
             .attr("d", line);
+
 
         // Hinzufügen der roten Linie bei einem Zuckerpegel von 180
         svg.append("line")
@@ -86,8 +110,10 @@ const StockChart = ({ data, N, K }) => {
 
     }, [K, N, data]);
 
+
     const bollinger = (values, N, K) => {
         //console.log(values, N, K);
+
         let i = 0;
         let sum = 0;
         let sum2 = 0;
@@ -104,13 +130,71 @@ const StockChart = ({ data, N, K }) => {
             const mean = sum / N;
             const deviation = Math.sqrt((sum2 - sum ** 2 / N) / (N - 1));
             for (let j = 0; j < K.length; ++j) {
-                bands[j][i] = mean + deviation * K[j];
+                bands[j][i - Math.floor(N / 2)] = mean + deviation * K[j];
             }
             const value0 = values[i - N + 1];
             sum -= value0;
             sum2 -= value0 ** 2;
         }
+        // console.log("bands", bands)
+        // console.log("bands1", bands[1])
+        // console.log("bands2", bands[2])
+        // const a0 = new Float64Array([...bands[0], ...bands[0].reverse()])
+        // const a1 = new Float64Array([...bands[1], ...bands[1].reverse()])
+        // const a2 = new Float64Array([...bands[0], ...bands[2].reverse()])
+
+        // const bandsArea = [a0, a1, a2]
+        // console.log(bandsArea)
         return bands;
+    };
+
+    const changeTimePeriod = (event) => {
+        console.log(event)
+        // Überwachen Sie das Mausrad-Delta, um festzustellen, ob nach oben oder unten gescrollt wird.
+        const delta = event.deltaY;
+
+        // Je nach Scroll-Richtung und Intensität aktualisieren Sie den Zeitraum.
+        if (delta > 0) {
+            // Scrollen nach unten: Vergrößern Sie den Zeitraum (zeigen Sie Daten für einen längeren Zeitraum).
+            enlargeTimePeriod();
+        } else {
+            // Scrollen nach oben: Verkleinern Sie den Zeitraum (zeigen Sie Daten für einen kürzeren Zeitraum).
+            shrinkTimePeriod();
+        }
+    }
+
+    const mouseEnter = () => {
+        document.body.style = "overflow:hidden"
+    }
+    const mouseLeave = () => {
+        document.body.style = "overflow:hidden"
+    }
+    const enlargeTimePeriod = () => {
+        // Hier aktualisieren Sie den Zeitraum basierend auf Ihrer Logik.
+        // Zum Beispiel: Jahr -> Monat -> Woche -> Tag -> usw.
+
+        // Beispiel:
+        if (timePeriod === 'year') {
+            setTimePeriod('month');
+        } else if (timePeriod === 'month') {
+            setTimePeriod('week');
+        } else if (timePeriod === 'week') {
+            setTimePeriod('day');
+        }
+        // ... und so weiter
+    };
+    const shrinkTimePeriod = () => {
+        // Hier aktualisieren Sie den Zeitraum basierend auf Ihrer Logik in umgekehrter Richtung.
+
+        // Beispiel:
+        if (timePeriod === 'month') {
+            setTimePeriod('year');
+        } else if (timePeriod === 'week') {
+            setTimePeriod('month');
+        } else if (timePeriod === 'day') {
+            setTimePeriod('week');
+        }
+        // ... und so weiter
     };
     useEffect(() => {
         if (data && data.length > 0) {
@@ -125,8 +209,7 @@ const StockChart = ({ data, N, K }) => {
         }
     }, [data, N, K]);
 
-
-    return <svg ref={chartRef} />;
+    return <svg ref={chartRef} onMouseLeave={mouseLeave} onMouseEnter={mouseEnter} onWheel={changeTimePeriod} />;
 };
 
 export default StockChart;
