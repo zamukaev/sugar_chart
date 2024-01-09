@@ -1,14 +1,10 @@
 /* eslint-disable react/prop-types */
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const StockChart = ({ data, N, K }) => {
+const StockChart = ({ data, N, K, changeTimePeriod }) => {
     const chartRef = useRef(null);
-    const [timePeriod, setTimePeriod] = useState("year");
-    const currentData = Math.floor(data.length / 2)
-    const [timeValue, setTimeValue] = useState(currentData)
-    const filtredData = data.slice(0, timeValue);
-    console.log(timeValue)
+    console.log(data)
     const drawChart = useCallback(() => {
         const width = 1228;
         const height = 800;
@@ -17,10 +13,10 @@ const StockChart = ({ data, N, K }) => {
         const marginBottom = 30;
         const marginLeft = 40;
 
-        const values = Float64Array.from(filtredData, d => d.sgv);
+        const values = Float64Array.from(data, d => d.sgv);
 
         const x = d3.scaleTime()
-            .domain(d3.extent(filtredData, d => d.date))
+            .domain(d3.extent(data, d => d.date))
             .rangeRound([marginLeft, width - marginRight]);
 
         const y = d3.scaleLog()
@@ -28,8 +24,8 @@ const StockChart = ({ data, N, K }) => {
             .rangeRound([height - marginBottom - 20, marginTop]);
 
         const line = d3.line()
-            .defined((y, i) => !isNaN(filtredData[i].date) && !isNaN(y))
-            .x((d, i) => x(filtredData[i].date))
+            .defined((y, i) => !isNaN(data[i].date) && !isNaN(y))
+            .x((d, i) => x(data[i].date))
             .y(y);
 
 
@@ -112,7 +108,7 @@ const StockChart = ({ data, N, K }) => {
             .attr("stroke", "blue")
             .attr("stroke-dasharray", "5.5");
 
-    }, [K, N, filtredData]);
+    }, [K, N, data]);
 
 
     const bollinger = (values, N, K) => {
@@ -152,20 +148,7 @@ const StockChart = ({ data, N, K }) => {
         return bands;
     };
 
-    const changeTimePeriod = (event) => {
-        const delta = event.deltaY;
 
-        if (delta >= 0) {
-            if (timeValue <= data.length - 10) {
-                setTimeValue(prev => prev + 10)
-            }
-        } else {
-            if (timeValue >= 60) {
-                setTimeValue(timeValue - 10)
-            }
-
-        }
-    }
 
     const mouseEnter = () => {
         document.body.style = "overflow:hidden"
@@ -186,7 +169,7 @@ const StockChart = ({ data, N, K }) => {
             // Zeichne die Chart mit den aktualisierten N und K
             drawChart();
         }
-    }, [data, timeValue, currentData, N, K]);
+    }, [data, N, K]);
 
     return <svg ref={chartRef} onMouseLeave={mouseLeave} onMouseEnter={mouseEnter} onWheel={changeTimePeriod} />;
 };
